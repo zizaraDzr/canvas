@@ -18,7 +18,7 @@ function initChart(canvas, data) {
   console.log(yMin, yMax);
   // масштаб графика
   const yRatio = VIEW_HEIGHT / (yMax - yMin);
-  const xRatio = VIEW_WIDTH / data.columns[0].length;
+  const xRatio = VIEW_WIDTH / (data.columns[0].length-2)
   // y axis
   // шаг по оси y
   const step = VIEW_HEIGHT / ROWS_COUNT;
@@ -52,15 +52,15 @@ function initChart(canvas, data) {
           Math.floor(DPI_HEIGHT - PADDING - y * yRatio),
         ])
         .filter((_, i) => i !== 0);
-      console.log(coords);
-      line(ctx, coords);
+      const color = data.colors[name]
+      line(ctx, coords, color);
     }
   });
 }
-function line(ctx, coords = []) {
+function line(ctx, coords, color) {
   ctx.beginPath();
   ctx.lineWidth = 4;
-  ctx.strokeStyle = "red";
+  ctx.strokeStyle = color;
   for (const [x, y] of coords) {
     // ctx.lineTo(x, DPI_HEIGHT - PADDING - y * yRatio);
     ctx.lineTo(x, y);
