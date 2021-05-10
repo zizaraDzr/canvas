@@ -12,14 +12,36 @@ function initChart(canvas, data) {
   canvas.style.height = HEIGHT + "px";
   canvas.height = DPI_HEIGHT;
   canvas.width = DPI_WIDTH;
-
   // вычислить границы
   const [yMin, yMax] = computeBoundaries(data);
-  console.log(yMin, yMax);
+  console.log(data);
   // масштаб графика
   const yRatio = VIEW_HEIGHT / (yMax - yMin);
-  const xRatio = VIEW_WIDTH / (data.columns[0].length-2)
-  // y axis
+  const xRatio = VIEW_WIDTH / (data.columns[0].length - 2);
+
+  const yData = data.columns.filter((col) => data.types[col[0]] === "line");
+  const xData = data.columns.filter((col) => data.types[col[0]] !== "line")[0];
+  // рисуем оси
+  yAxis(ctx, yMin, yMax);
+  xAxis(ctx, xData, xRatio);
+
+  yData.forEach((col) => {
+    const name = col[0];
+    const color = data.colors[name];
+    const coords = col.map(toCoords(xRatio, yRatio)).filter((_, i) => i !== 0);
+    line(ctx, coords, { color });
+  });
+}
+
+function toCoords(xRatio, yRatio) {
+  return function (y, i) {
+    return [
+      Math.floor((i - 1) * xRatio),
+      Math.floor(DPI_HEIGHT - PADDING - y * yRatio),
+    ];
+  };
+}
+function yAxis(ctx, yMin, yMax) {
   // шаг по оси y
   const step = VIEW_HEIGHT / ROWS_COUNT;
   const textStep = (yMax - yMin) / ROWS_COUNT;
@@ -41,28 +63,23 @@ function initChart(canvas, data) {
   }
   ctx.stroke();
   ctx.closePath();
-  // ===
-
-  data.columns.forEach((col) => {
-    const name = col[0];
-    if (data.types[name] === "line") {
-      const coords = col
-        .map((y, i) => [
-          Math.floor((i - 1) * xRatio),
-          Math.floor(DPI_HEIGHT - PADDING - y * yRatio),
-        ])
-        .filter((_, i) => i !== 0);
-      const color = data.colors[name]
-      line(ctx, coords, color);
-    }
-  });
 }
-function line(ctx, coords, color) {
+function xAxis(ctx, xData, xRatio) {
+  const colsCount = 6;
+  const step = Math.round(xData.length / colsCount);
+  ctx.beginPath();
+  for (let i = 1; i < xData.length; i += step) {
+    const text = toDate(xData[i]);
+    const x = i * xRatio;
+    ctx.fillText(text.toString(), x, DPI_HEIGHT -10);
+  }
+  ctx.closePath();
+}
+function line(ctx, coords, { color }) {
   ctx.beginPath();
   ctx.lineWidth = 4;
   ctx.strokeStyle = color;
   for (const [x, y] of coords) {
-    // ctx.lineTo(x, DPI_HEIGHT - PADDING - y * yRatio);
     ctx.lineTo(x, y);
   }
   ctx.stroke();
@@ -91,7 +108,25 @@ function computeBoundaries({ columns, types }) {
 
   return [min, max];
 }
-
+// короткая запись месяцев
+function toDate(timeStamp) {
+  const shorMounths = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const date = new Date(timeStamp)
+  return `${shorMounths[date.getMonth()]} ${date.getDate()}`
+}
 // получить данные
 function getData() {
   return {
